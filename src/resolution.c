@@ -1,48 +1,14 @@
 #include <resolution.h>
-#include <stddef.h>
-bool pv_is_equal(propositional_variable pv1, propositional_variable pv2)
-{
-    return (pv1.name == pv2.name && pv1.index == pv2.index);
-}
 
-bool pl_is_equal(propositional_literal pl1, propositional_literal pl2)
-{
-    return (pv_is_equal(pl1.variable, pl2.variable) && pl1.sign == pl2.sign);
-}
-bool pl_is_negation(propositional_literal pl1 , propositional_literal pl2)
-{
-    return (pv_is_equal(pl1.variable,pl2.variable) && pl1.sign != pl2.sign);
-}
+#include "clauses_avl.h"
 
-propositional_variable pv_create(char name, int index)
+clause clause_parse(char *str , propositions_hash_table *hash_table)
 {
-    propositional_variable pv;
-    pv.name = name;
-    pv.index = index;
-    return pv;
-}
-propositional_literal pl_create(propositional_variable pv, bool sign)
-{
-    propositional_literal pl;
-    pl.variable = pv;
-    pl.sign = sign;
-    return pl;
-}
-clause clause_create(propositional_literal *literals, int size)
-{
-    clause c;
-    c.literals = literals;
-    c.size = size;
-    return c;
-}
-clause clause_parse(char *str)
-{
-    clause c;
-    char pr_v[4]; // charachter and two digits for index
-    pr_v[3] = '\0'; // null-terminate the string
+    clause c ;
+    init_clause(&c); // initialize the clause
+    char pr_v[MAX_VARIABLE_LENGHT]; // charachter and two digits for index
+    //pr_v[3] = '\0'; // null-terminate the string
     bool pr_v_signe = true; // true for positive, false for negative
-    c.literals = (propositional_literal *)malloc(MAX_LITERALS * sizeof(propositional_literal)); // allocate memory for literals
-    c.size = 0; // initialize size to 0
     int literal_index = 0;
     int i = 0; // index for the string
     while (str[i] != '\0' && str[i]!='\n' && literal_index<MAX_LITERALS)
@@ -61,38 +27,347 @@ clause clause_parse(char *str)
             i++;
             if (str[i] >= '0' && str[i] <= '9') // check if character is digit
             {
-                pr_v[1] = str[i]; // store first digit
-                i++;
-                if (str[i] >= '0' && str[i] <= '9') // check for second digit
+                for (int j=1;j<MAX_VARIABLE_LENGHT;j++)
                 {
-                    pr_v[2] = str[i]; // store second digit
-                } else {
-                    pr_v[2] = '\0'; // terminate string if no second digit
+                    if (str[i] >= '0' && str[i] <= '9') {// check if character is digit
+                        pr_v[j] = str[i++]; // store digit
+                    } else {
+                        pr_v[j] = '\0'; // terminate string if no digit
+                        break; // break if no more digits
+                    }
                 }
+                pr_v[MAX_VARIABLE_LENGHT-1] = '\0'; // ensure null-termination
             } else pr_v[1] = '\0'; // if no digit, terminate string
-            propositional_variable pv = pv_create(pr_v[0], atoi(pr_v + 1)); // create propositional variable
-            propositional_literal pl = pl_create(pv, pr_v_signe); // create propositional literal
-            c.literals[literal_index++] = pl; // add literal to clause
-            c.size++; // increment size of clause
-            pr_v_signe = true; // reset sign for next literal
+            int index = proposition_index(pr_v, hash_table); // get index of the proposition
+            if (index == -1) {
+                fprintf(stderr, "Error: Hash table overfloww\n");
+                return c; // if index is -1, hash table is full
+            }
+            clasue_insert_literal(&c,(pr_v_signe ? index : -index)); // insert the literal into the clause
+            pr_v_signe = true;
         }
         i++;
     }
     return c;
 }
 
-void clause_str(clause c)
+int proposition_index(char *proposition, propositions_hash_table *hash_table)
 {
-    for (int i = 0; i < c.size; i++)
+    int index = 1; // start from 1 because 0 has no complement
+    while (index < hash_table->size )
     {
-        if (!c.literals[i].sign)
+        if (hash_table->table[index] != NULL && strncmp(hash_table->table[index],proposition,MAX_VARIABLE_LENGHT) == 0)
         {
-            printf("~");
+            return index; // found the proposition
         }
-        printf("%c%d ", c.literals[i].variable.name, c.literals[i].variable.index);
-        if (i < c.size - 1)
+        index++;
+    }
+    // if not found, add it to the hash table
+    if (index < MAX_VARIABLES)
+    {
+        hash_table->table[index] = malloc(MAX_VARIABLE_LENGHT);
+        if (hash_table->table[index] == NULL)
         {
-            printf("| ");
+            fprintf(stderr, "Memory allocation failed while allocating variable\n");
+            exit(EXIT_FAILURE);
         }
+        strncpy(hash_table->table[index], proposition, MAX_VARIABLE_LENGHT);
+        hash_table->table[index][MAX_VARIABLE_LENGHT - 1] = '\0';
+        hash_table->size++;
+        return index; // return the index of the new proposition
+    }
+    fprintf(stderr, "Hash table is full, cannot add more propositions\n");
+    return -1; // hash table is full, cannot add more propositions
+}
+
+void init_clause(clause *c)
+{
+    c->literals = malloc(MAX_LITERALS * sizeof(int)); // allocate memory for literals
+    if (c->literals == NULL)
+    {
+        fprintf(stderr, "Memory allocation failed while allocating literals ,init_clause\n");
+        return;
+    }
+    c->size = 0; // initialize size to 0
+}
+
+bool clasue_insert_literal(clause *c, int literal)
+{
+    int index;
+    if (clause_search_literal(c, literal, &index)) {
+        return false; // literal already exists, no need to insert
+    }
+    if (c->size < MAX_LITERALS) {
+        // Shift elements to the right to make space for the new literal
+        for (int i = c->size; i > index; i--) {
+            c->literals[i] = c->literals[i - 1];
+        }
+        c->literals[index] = literal; // insert the new literal
+        c->size++; // increment size of the clause
+        return true; // literal inserted successfully
+    } else {
+        fprintf(stderr, "Clause is full, cannot insert more literals\n");
+        return false; // clause is full, cannot insert more literals
+    }
+}
+
+bool clause_search_literal(clause *c, int literal, int *found_index)
+{
+    int left = 0, right = c->size - 1;
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+        if (c->literals[mid] == literal) {
+            if (found_index) *found_index = mid;
+            return true;
+        } else if (c->literals[mid] < literal) {
+            left = mid + 1;
+        } else {
+            right = mid - 1;
+        }
+    }
+    if (found_index) *found_index = left; // insertion point
+    return false;
+}
+
+char *clause_to_string(clause *c, propositions_hash_table *hash_table)
+{
+    if (c == NULL || c->size == 0) {
+        return NULL; // return NULL if clause is empty
+    }
+    char *result = malloc(MAX_LINE_LENGTH);
+    if (result == NULL) {
+        fprintf(stderr, "Memory allocation failed while allocating result string\n");
+        return NULL;
+    }
+    result[0] = '\0'; // initialize result string
+    for (int i = 0; i < c->size; i++) {
+        int literal = c->literals[i];
+        char *proposition = hash_table->table[abs(literal)];
+        if (proposition == NULL) {
+            fprintf(stderr, "Proposition not found in hash table\n");
+            free(result);
+            return NULL;
+        }
+        if (literal < 0) {
+            strcat(result, "~"); // add negation sign for negative literals
+        }
+        strcat(result, proposition); // append proposition to result
+        if (i < c->size - 1) {
+            strcat(result, "| "); // add or between literals
+        }
+    }
+    strncat(result, "\0", 1);
+    return result; // return the resulting string
+}
+
+void init_hash_table(propositions_hash_table *hash_table)
+{
+    hash_table->size = 1; // initialize size to 0
+    hash_table->table = malloc(MAX_VARIABLES * sizeof(char *)); // allocate memory for hash table
+    hash_table->table[0] = malloc(MAX_VARIABLE_LENGHT);
+    hash_table->table[0] = "0"; // index 0 is reserved for empty clasue
+}
+
+
+bool resolve_by_refutaion(clause_list *list, propositions_hash_table *hash_table)
+{
+    // craate an AVL tree to store clauses to perform search for already existing clauses efficiently
+    TNoeud *root = NULL; // root of the AVL tree
+    clause_node *clause_list = list->head; // pointer to the clause list
+    while (clause_list != NULL) // iterate through the list of clauses
+    {
+        // insert clause into the AVL tree
+        clause *c = &clause_list->value; // get the clause from the list
+        inserer(c, &root); // insert the clause into the AVL tree
+        clause_list = clause_list->next; // move to the next clause in the list
+    }
+    // now we have all clauses in the AVL tree, we can perform resolution by refutation
+    clause_node *node1 , *node2; // pointers to the clauses in the list
+    clause_node *resolvent_node; // pointer to the resolvent node
+    clause resolvent = {0}; // initialize the resolvent clause
+    node1 = list->head; // start with the first clause in the list
+
+    int c1 = -1;
+    int c2 =-1; // indices of the clauses that were used to create this clause
+
+    while (node1 != NULL)
+    {
+        //if (node1->c2 == -2) break;
+        c1++; // increment c1 for each clause
+        //node2 = node1->next;
+        c2=-1;
+
+            //c2 = c1; // set c2 to c1 for initial clauses
+            //node2 = node1->next;
+            node2 = list->head;
+            c2= -1; // reset c2 for each new node1
+        while (node2 != node1)
+        {
+            c2++;
+            /*if (node1->c1 == node2->c1 && node1->c2!=-1)
+            {
+                node2 = node1->next;
+                c2 = c1+1;
+                continue;
+            }*/
+            //for (int i=0;i<node2->value.size;i++) printf(" %d ",node2->value.literals[i]);
+            //printf("\n%d: %s || %s \n",ss++,clause_to_string(&node1->value,hash_table),clause_to_string(&node2->value, hash_table));
+            if (clause_resolvent(&node1->value,&node2->value,&resolvent))
+            {
+                resolvent_node = CreerClauseNoeud(); // create a new clause node for the resolvent
+                resolvent_node->value = resolvent; // set the value of the resolvent
+                resolvent_node->next = NULL; // set the next pointer to NULL
+
+                if (inserer(&resolvent_node->value, &root)){ // insert the resolvent into the AVL tree , if it is not already present insert it in list
+                    //list->tail->next = CreerClauseNoeud(); // create a new clause node
+                    list->tail->next = resolvent_node; // set the next pointer of the tail to the new node
+                    list->tail = list->tail->next; // move the tail to the new node
+                    //list->tail->value = resolvent; // set the value of the new node to the resolvent
+                    //list->tail->next = NULL; // set the next pointer to NULL
+                    list->size++; // increment the size of the list
+                    Aff_clause_node(resolvent_node, c1, c2); // set c1 and c2 for the resolvent node
+                    if (resolvent.size==0)
+                    {
+                        //printf("FOUNDED\n");
+                        //printf("between : %s and %s\n", clause_to_string(&node1->value, hash_table), clause_to_string(&node2->value, hash_table));
+                        return true; // if the resolvent is empty, we have found a contradiction
+                    }
+                } else
+                { // if the resolvent is already in the list ignore it
+                    free(resolvent_node);
+                    if (resolvent.literals != NULL) free (resolvent.literals); // free the memory allocated for literals
+                    resolvent.literals = NULL; // set literals to NULL
+                }
+            }
+            node2 = node2->next; // move to the next clause in the list
+        }
+        node1 = node1->next; // move to the next clause in the list
+    }
+    // if we reach here, we have not found a contradiction
+    printf("No contradiction found, resolution by refutation failed\n");
+    return false;
+}
+/* * Complete order relation between clauses to use in AVL tree
+ * Function to compare two clauses
+ * Returns a negative value if c1 < c2, a positive value if c1 > c2, and 0 if they are equal
+ */
+int clause_compare(clause *c1, clause *c2)
+{
+    int size = c1->size < c2->size ? c1->size : c2->size;
+    for (int i = 0; i < size; i++) {
+        if (c1->literals[i] != c2->literals[i]) {
+            return c1->literals[i] - c2->literals[i]; // return difference if literals are not equal
+        }
+    }
+    return c1->size - c2->size; // return difference in size if all literals are equal
+}
+
+/* * Function to resolve two clauses and return the resolvent
+ * If the clauses can be resolved and the resolvent is useful, it returns true and fills the result clause
+ * If they cannot be resolved or the resolvent is not useful, it returns false
+ */
+bool clause_resolvent(clause *c1, clause *c2, clause * result)
+{
+    if (c1 == NULL | c2 == NULL ) return false;
+    init_clause(result); // initialize the result clause
+    int i = 0, j = c2->size-1; // indices for the clauses
+    int negation_count = 0; // count of negations found
+    int negated_literal =0; // the negated literal found
+    while (i<c1->size && j >= 0 )
+    {
+        while (-c1->literals[i] > c2->literals[j] && i<c1->size) // find the literal in c2 that is the negation of the literal in c1
+        {
+            i++;
+        }
+        while (-c1->literals[i] < c2->literals[j] && j>=0) // find the literal in c1 that is the negation of the literal in c2
+        {
+            j--;
+        }
+        if (i < c1->size && j >= 0 && -c1->literals[i] == c2->literals[j]) // if we found the negation
+        {
+            negated_literal = abs(c1->literals[i]); // store the negated literal
+            negation_count++;
+            i++; // move to the next literal in c1
+            j--; // move to the previous literal in c2
+        }
+        if (negation_count > 1) // if we found more than one negation, the resolvent is not useful
+        {
+            free(result->literals); // free the memory allocated for literals
+            result->literals = NULL; // set literals to NULL
+            result->size = 0; // set size to 0
+            return false; // return false, we cannot resolve
+        }
+    }
+    if (negation_count == 0) // if we did not find any negation, we cannot resolve
+    {
+        free(result->literals); // free the memory allocated for literals
+        result->literals = NULL; // set literals to NULL
+        result->size = 0; // set size to 0
+        return false; // return false, we cannot resolve
+    } else if (negation_count == 1) // if we found one negation, we can resolve
+    {
+        i = 0;
+        j=0;
+        result->size = c1->size + c2->size - 2; // size of the resolvent is the sum of sizes of the clauses minus 2 (for the negated literals)
+        int k;
+        if (result->size==0)
+        {
+            result->literals[0] = 0; // if the resolvent is empty, set the first literal to 0
+            return true; // return true, we resolved successfully
+        }
+        for (k=0;k < result->size & i<c1->size & j<c2->size;k++)
+        {
+            if (i>=c1->size || j>=c2->size) break; // if we reached the end of one of the clauses, break
+
+            if (abs(c1->literals[i]) == negated_literal) i++;
+            if (abs(c2->literals[j]) == negated_literal) j++;
+
+            if (i>=c1->size || j>=c2->size) break; // if we reached the end of one of the clauses, break
+
+            if (c1->literals[i] < c2->literals[j] )
+            {
+                result->literals[k] = c1->literals[i];
+                i++; // move to the next literal in c1
+            } else if (c1->literals[i] > c2->literals[j])
+            {
+                result->literals[k] = c2->literals[j];
+                j++;
+            } else {
+                result->literals[k] = c1->literals[i];
+                i++; // move to the next literal in c1
+                j++; // move to the next literal in c2
+                result->size--;
+            }
+        }
+        while (i<c1->size ) result->literals[k++] = c1->literals[i++]; // copy the remaining literals from c1
+        while (j<c2->size ) result->literals[k++] = c2->literals[j++]; // copy the remaining literals from c2
+        return true; // return true, we resolved successfully
+    }
+
+}
+
+void insert_clause_node(clause_list *list, clause_node *node)
+{
+    if (list->head == NULL) { // if the list is empty
+        list->head = node; // set head to the new node
+        list->tail = node; // set tail to the new node
+    } else {
+        list->tail->next = node; // append the new node to the end of the list
+        list->tail = node; // update tail to the new node
+    }
+    node->next = NULL; // set the next pointer of the new node to NULL
+    list->size++; // increment size of the list
+}
+void save_clauses_after_resolution(FILE *file, clause_list *list, propositions_hash_table *hash_table)
+{
+    int index = 0; // index for the clauses
+    clause_node *node = list->head; // start with the head of the list
+    while (node != NULL) { // iterate through the list
+        if (node->c2 == -1) { // if c2 is -1, it means this is an initial clause
+            fprintf(file, "%d,,%s\n", index++, clause_to_string(&node->value, hash_table)); // print the clause to the file
+        } else {
+            fprintf(file, "c%d,res(c%d;c%d),%s\n", index++, node->c1, node->c2, clause_to_string(&node->value, hash_table)); // print the resolvent clause with its origin
+        }
+        node = node->next; // move to the next node
     }
 }

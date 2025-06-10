@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 /*
  *  resolution.h
  *  this file will contain declaration of data structures and functions
@@ -20,36 +21,56 @@
  *  5. P0 -> P1 (implication)
  *  6. P0 <-> P1 (equivalence)
  */
+#define MAX_VARIABLE_LENGHT 5 // maximum length of a variable (e.g., P99)
 #define MAX_LINE_LENGTH 1024
 #define MAX_LITERALS 100 // maximum number of literals in a clause
-
-typedef struct {
-    char name; // charachter
-    int index;  // index
-} propositional_variable;
+#define MAX_VARIABLES 500
 
 typedef struct
 {
-    propositional_variable variable;
-    bool sign; // 1 for positive, 0 for negative
-} propositional_literal;
+    int size; // size of hash table
+    char **table; // hash table to store propositions
+}propositions_hash_table;
 
 typedef struct
 {
-    propositional_literal *literals; // array of literals
+    int *literals; // array of literals
     int size; // size of the array
 } clause;
+typedef struct c_node
+{
+    clause value; // value of the clause
+    int c1,c2; // indices of the clauses that were used to create this clause
+    struct c_node *next; // pointer to the next clause in the linked list
+}clause_node;
+// Allouer un nouveau noeud
+#define CreerClauseNoeud()  malloc( sizeof(clause_node) )
+// Destruction du noeud p
+#define LibererClauseNoeud(p) free((p))
+// Affecte c1 et c2 dans le noeud p
+#define Aff_clause_node(p,c1,c2) (p)->c1 = (c1); (p)->c2 = (c2)
+
+typedef struct
+{
+    clause_node *head;
+    clause_node *tail; // pointer to the tail of the linked list
+    int size; // size of the linked list
+} clause_list;
+void insert_clause_node(clause_list *list, clause_node *node);
 
 /*
  *  Function declarations
  */
-// Function to check if two propositional variables are equal
-bool pv_is_equal(propositional_variable pv1, propositional_variable pv2);
-bool pl_is_equal(propositional_literal pl1, propositional_literal pl2);
-bool pl_is_negation(propositional_literal pl, propositional_literal pl2);
-clause clause_parse(char *str);
-clause clause_create(propositional_literal *literals, int size);
-propositional_literal pl_create(propositional_variable pv, bool sign);
-propositional_variable pv_create(char name, int index);
-void clause_str(clause c);
+clause clause_parse(char *str , propositions_hash_table *hash_table);
+int proposition_index(char *proposition, propositions_hash_table *hash_table);
+void init_clause(clause *c);
+bool clause_search_literal(clause *c, int literal, int *found_index);
+bool clasue_insert_literal(clause *c, int literal);
+void init_hash_table(propositions_hash_table *hash_table);
+char *clause_to_string(clause *c, propositions_hash_table *hash_table);
+int clause_compare(clause *c1, clause *c2);
+bool clause_resolvent(clause *c1, clause *c2, clause * result);
+bool resolve_by_refutaion(clause_list *list, propositions_hash_table *hash_table);
+void save_clauses_after_resolution(FILE *file, clause_list *list, propositions_hash_table *hash_table);
+
 #endif //RESOLUTION_H
