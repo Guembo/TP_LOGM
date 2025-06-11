@@ -37,15 +37,24 @@ typedef struct
 }propositions_hash_table;
 
 typedef enum {
-    AND, // conjunction
-    OR, // disjunction
-    IMPLIES, // implication
-    EQUIVALENT, // equivalence
-    NOT, // negation
-    OPEN_BRACKET,
-    CLOSE_BRACKET, // parentheses
+    AND='&', // conjunction
+    OR='|', // disjunction
+    IMPLIES='>', // implication
+    EQUIVALENT='=', // equivalence
+    NOT='-', // negation
+    OPEN_BRACKET='(', // opening parenthesis
+    CLOSE_BRACKET=')', // parentheses
     VARIABLE, // propositional variable
 } connective_type; // type of connective
+enum
+{
+    B_AND = 0xA7, // using UTF-8 characters for beautiful connectors
+    B_OR = 0x1E, // using UTF-8 characters for beautiful connectors
+    B_IMPLIES = 0x92, // using UTF-8 characters for beautiful connectors
+    B_EQUIVALENT = 0x94, // using UTF-8 characters for beautiful connectors
+    B_NOT = 0xAC, // using UTF-8 characters for beautiful connectors
+}BEAUTIFUL_CONECTORS; // using UTF-8 characters for beautiful connectors
+enum {FIRST_FORMULA , RIGHT_FORMULA , LEFT_FORMULA }; // used to distinguish left and right formulas in the tree
 //We included variable just for programming purpose to avoid declaring another enum to distinguish connectives from variable
 
 // We use a union to store the value of the tree node, which can be either a variable or a connector
@@ -56,7 +65,7 @@ typedef struct node_struct{
     union element_union {int variable; struct {struct node_struct* lc;struct node_struct* rc;} connector ;} val;
     char type;
 }*node;
-
+void allocateTree(node * n);
 /* Functions to manupulate nodes stack */
 typedef struct stack_node{
     node val;
@@ -68,4 +77,16 @@ void push(stack *s , node n);
 node pop(stack *s);
 node getTop(stack s);
 
+/**/
+int isConnector(char c);
+int comparePriority(char a, char b);
+void getVariable(char *input, int *i,char* buffer);
+int variable_compare(char *a, char *b);
+int proposition_index(char *proposition, propositions_hash_table *hash_table);
+node formula_to_tree(char *formula, propositions_hash_table *hash_table);
+void latex_tree_to_formula(node root,propositions_hash_table hash_table ,char *buffer,int *index,int formula_type);
+void tree_to_formula(node root,propositions_hash_table hash_table ,char *buffer,int *index,int formula_type);
+void init_hash_table(propositions_hash_table *hash_table);
+void append_utf8(char *buffer, int *index, const char *utf8_char);
+node formula_tree_duplicate(node root);
 #endif //FORMULE_TO_CNF_H

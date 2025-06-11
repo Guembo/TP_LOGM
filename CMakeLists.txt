@@ -20,6 +20,11 @@ add_executable(sodoku_exec
         include/resolution.h
         include/clauses_avl.h
 )
+
+add_executable(fnc_exec
+        src/formule_to_cnf.c
+        include/formule_to_cnf.h
+)
 #set_target_properties(LOGM_TP PROPERTIES
 #    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}
 #)
