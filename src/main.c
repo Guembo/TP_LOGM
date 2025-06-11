@@ -102,7 +102,7 @@ int main(int argc, char **argv)
             node = node->next;
         }
             gettimeofday(&tv1, NULL);
-            bool result = resolve_by_refutaion(&list_des_clauses, &hash_table);
+            bool result = resolve_by_refutaion(&list_des_clauses,NULL, &hash_table);
             gettimeofday(&tv2, NULL);
             t = (tv2.tv_sec - tv1.tv_sec)*1000000 + (tv2.tv_usec - tv1.tv_usec);
             if (result == true) {

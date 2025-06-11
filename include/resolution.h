@@ -70,7 +70,7 @@ void init_hash_table(propositions_hash_table *hash_table);
 char *clause_to_string(clause *c, propositions_hash_table *hash_table);
 int clause_compare(clause *c1, clause *c2);
 bool clause_resolvent(clause *c1, clause *c2, clause * result);
-bool resolve_by_refutaion(clause_list *list, propositions_hash_table *hash_table);
+bool resolve_by_refutaion(clause_list *list,clause_node *start, propositions_hash_table *hash_table);
 void save_clauses_after_resolution(FILE *file, clause_list *list, propositions_hash_table *hash_table);
-
+bool clause_is_tautology(clause *c);
 #endif //RESOLUTION_H

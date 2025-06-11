@@ -2,6 +2,7 @@
 #ifndef SODOKU_BY_RESOLUTION_H
 #define SODOKU_BY_RESOLUTION_H
 #include <resolution.h>
+#include <clauses_avl.h>
 
 #define SODOKU_SIZE 9 // size of the sodoku grid
 #define SUB_BLOCK_SIZE 3 // size of the sub-blocks in the sodoku grid
@@ -41,11 +42,12 @@ clause_list sodoku_constraints_clauses();
  *  465100000
  *  5254552**
  */
-void load_sodoku_constraints_from_file(FILE *file, clause_list *list);
+void load_sodoku_constraints_from_file(FILE *file, clause_list *list,int startC1);
 
 // Function to print the sodoku grid from the clause list
 void print_sodoku_grid(clause_list *list);
 void save_sodoku_validation(FILE *file, clause_list *list ,clause_list *result_clauses, int *used_sodoku_constraints,int size);
 void sodoku_clauses_to_string(clause c, char *buffer, size_t buffer_size);
 bool search_used_constraints(int c1 , int *used_sodoku_constraints, int size);
+bool sodoku_resolve_by_refutaion(clause_list *list,clause_node *start);
 #endif //SODOKU_BY_RESOLUTION_H

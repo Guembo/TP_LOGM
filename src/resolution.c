@@ -18,7 +18,7 @@ clause clause_parse(char *str , propositions_hash_table *hash_table)
             i++;
             continue; // skip spaces
         }
-        if (str[i] == '~')
+        if (str[i] == '-')
         {
             pr_v_signe = false;
         } else if ((str[i] >= 'A' && str[i] <= 'Z') || (str[i]>='a' && str[i]<='z')) // check if character letter
@@ -149,7 +149,7 @@ char *clause_to_string(clause *c, propositions_hash_table *hash_table)
             return NULL;
         }
         if (literal < 0) {
-            strcat(result, "~"); // add negation sign for negative literals
+            strcat(result, "-"); // add negation sign for negative literals
         }
         strcat(result, proposition); // append proposition to result
         if (i < c->size - 1) {
@@ -169,25 +169,35 @@ void init_hash_table(propositions_hash_table *hash_table)
 }
 
 
-bool resolve_by_refutaion(clause_list *list, propositions_hash_table *hash_table)
+bool resolve_by_refutaion(clause_list *list,clause_node *start, propositions_hash_table *hash_table)
 {
     // craate an AVL tree to store clauses to perform search for already existing clauses efficiently
     TNoeud *root = NULL; // root of the AVL tree
     clause_node *clause_list = list->head; // pointer to the clause list
+    clause_node *previous =NULL ; // pointers to the current and previous nodes in the list
+
     while (clause_list != NULL) // iterate through the list of clauses
     {
         // insert clause into the AVL tree
         clause *c = &clause_list->value; // get the clause from the list
-        inserer(c, &root); // insert the clause into the AVL tree
+        if (!inserer(c, &root) || clause_is_tautology(&clause_list->value)){ // insert the clause into the AVL tree
+            clause_node *next = clause_list->next;
+            free(clause_list);
+            previous->next = next; // remove the clause from the list if it is already present in the AVL tree
+        }
+        previous = clause_list; // save the previous node
         clause_list = clause_list->next; // move to the next clause in the list
     }
     // now we have all clauses in the AVL tree, we can perform resolution by refutation
     clause_node *node1 , *node2; // pointers to the clauses in the list
     clause_node *resolvent_node; // pointer to the resolvent node
     clause resolvent = {0}; // initialize the resolvent clause
-    node1 = list->head; // start with the first clause in the list
-
-    int c1 = -1;
+    if (start != NULL) { // if start is not NULL, we start from the given clause
+        node1 = start; // set node1 to start
+    } else {
+        node1 = list->head; // otherwise, start with the first clause in the list
+    }
+    int c1 = node1->c1-1;
     int c2 =-1; // indices of the clauses that were used to create this clause
 
     while (node1 != NULL)
@@ -339,8 +349,16 @@ bool clause_resolvent(clause *c1, clause *c2, clause * result)
                 result->size--;
             }
         }
-        while (i<c1->size ) result->literals[k++] = c1->literals[i++]; // copy the remaining literals from c1
-        while (j<c2->size ) result->literals[k++] = c2->literals[j++]; // copy the remaining literals from c2
+        while (i<c1->size )
+        {
+            if (abs(c1->literals[i])!=negated_literal)result->literals[k++] = c1->literals[i]; // copy the remaining literals from c1
+            i++; // move to the next literal in c1
+        }
+        while (j<c2->size )
+        {
+            if (abs(c2->literals[j])!=negated_literal)result->literals[k++] = c2->literals[j]; // copy the remaining literals from c2
+            j++; // move to the next literal in c2
+        }
         return true; // return true, we resolved successfully
     }
 
@@ -370,4 +388,19 @@ void save_clauses_after_resolution(FILE *file, clause_list *list, propositions_h
         }
         node = node->next; // move to the next node
     }
+}
+
+bool clause_is_tautology(clause *c)
+{
+    if (c == NULL || c->size == 0) {
+        return false;
+    }
+    for (int i = 0; i < c->size; i++) {
+        for (int j = i + 1; j < c->size; j++) {
+            if (c->literals[i] == -c->literals[j]) {
+                return true; // if there is a literal and its negation, it is a tautology
+            }
+        }
+    }
+    return false; // no tautology found
 }

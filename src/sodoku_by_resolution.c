@@ -21,31 +21,42 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Error: Could not open input file '%s'\n", input_file_name);
         return EXIT_FAILURE; // exit if the file cannot be opened
     }
-    clause_list list = {NULL, NULL, 0}; // initialize the clause list
-    load_sodoku_constraints_from_file(input_file, &list);
-    fclose(input_file); // close the input file after reading
-    printf("Sodoku constraints game loaded successfully.\n");
-    printf("Number of non-empty cells loaded: %d\n", list.size); // print the number of clauses loaded
-    printf("The sodoku game :\n", list.size);
-    print_sodoku_grid(&list);
+
     printf("Generating sodoku constraints clauses...\n");
-    clause_list sodoku_constraints = sodoku_constraints_clauses(list.size); // generate the sodoku constraints clauses
+    clause_list list = sodoku_constraints_clauses(); // generate the sodoku constraints clauses
     printf("Sodoku constraints clauses generated successfully.\n");
 
+    clause_list intial_values = {NULL, NULL, 0}; // initialize the list of initial values
+    load_sodoku_constraints_from_file(input_file, &intial_values,list.size); // load the sodoku constraints from the input file
+    fclose(input_file); // close the input file after reading
+    printf("Sodoku constraints game loaded successfully.\n");
+    printf("Number of non-empty cells loaded: %d\n", intial_values.size); // print the number of clauses loaded
+    printf("The sodoku game :\n");
+    print_sodoku_grid(&intial_values);
+
     // append the sodoku constraints clauses to the list
-    if (list.size == 0)
+    if (intial_values.size == 0)
     {
         printf("The grid is empty, no clauses to resolve.\n");
         return EXIT_SUCCESS; // if the list is empty, exit successfully
     }
-    int initial_size = list.size; // store the initial size of the list
-    int constraint_size = sodoku_constraints.size;
-    list.size += sodoku_constraints.size; // update the size of the list with the size of the sodoku constraints clauses
-    list.tail->next = sodoku_constraints.head; // link the tail of the list to the head of the sodoku constraints clauses
-    list.tail = sodoku_constraints.tail;
+
+
+
+
+
+
+    int initial_size = intial_values.size; // store the initial size of the list
+    int constraint_size = list.size;
+    list.size += initial_size; // update the size of the list
+    list.tail->next = intial_values.head; // link the tail of the list to the head of the sodoku constraints clauses
+    list.tail = intial_values.tail;
 
     int size = list.size; // get the size of the list
-    int result = resolve_by_refutaion(&list, NULL); // resolve the clauses by refutation
+    clause_node *old_head = list.head;
+    int result = sodoku_resolve_by_refutaion(&list,intial_values.head); // resolve the clauses by refutation
+    //int result = resolve_by_refutaion(&list, intial_values.head, NULL); // resolve the clauses by refutation
+
     if (result) {
         printf("The sodoku grid is invalid\n");
     } else {
@@ -53,8 +64,27 @@ int main(int argc, char *argv[])
     }
 
     int resolved_clauses_count = list.size - size; // count the number of resolved clauses
+    // make the resolvent clauses at the end of list
+    if (resolved_clauses_count >0)
+    {
+        clause_node *current = list.head;
+        clause_node *res_head = current;
+        clause_node *p = current->next;
+        clause_node *tail = current;
+        current->next = NULL;
+        while (p->c2 != UNSUED_SODOKU_CONSTRAINTS)
+        {
+            res_head = p;
+            p = p->next; // move to the next node in the list
+            res_head->next = current;
+            current = res_head;
+        }
+        list.head = p;
+        list.tail->next = res_head;
+        list.tail = tail; // update the tail of the list to the last node
+    }
     int used_sodoku_constraints[resolved_clauses_count] ;
-    clause_node *current_node = sodoku_constraints.tail; // pointer to the current node in the list
+    clause_node *current_node = intial_values.tail->next; // pointer to the first created clause by resolution
     int used_count = 0; // count of used sodoku constraints
     while (current_node != NULL) {
         if (current_node->c2 <= initial_size+constraint_size-1 && current_node->c2 >= initial_size) {
@@ -66,22 +96,24 @@ int main(int argc, char *argv[])
 
     FILE *output_file = NULL;
     output_file = fopen("sodoku_solution.csv", "w"); // open the output file for writing
-    save_sodoku_validation(output_file, &list, &sodoku_constraints,used_sodoku_constraints,used_count-1); // save the sodoku validation to the output file
+    save_sodoku_validation(output_file, &list, &intial_values,used_sodoku_constraints,used_count-1); // save the sodoku validation to the output file
 
 }
 
 
 
 
-clause_list sodoku_constraints_clauses(int clauses_count)
+clause_list sodoku_constraints_clauses()
 {
-    int c1 = clauses_count; // count of clauses created
+    int c1 = 0; // count of clauses created
     int c2=UNSUED_SODOKU_CONSTRAINTS;
     clause_list list = {NULL, NULL, 0}; // initialize the clause list
     // cells contain numbers from 1 to 9
     for (int i=1;i<=SODOKU_SIZE;i++){
     for (int j=1;j<=SODOKU_SIZE ;j++){
         // create a clause for each cell that contains numbers from 1 to 9
+
+
         clause_node *new_clause_node = CreerClauseNoeud(); // create a new clause node
         new_clause_node->value.size = SODOKU_SIZE; // set the size of the clause to 9
         new_clause_node->value.literals = malloc(SODOKU_SIZE * sizeof(int)); // allocate memory for the literals
@@ -93,6 +125,7 @@ clause_list sodoku_constraints_clauses(int clauses_count)
             new_clause_node->value.literals[k-1] = i * ROW_INDICE + j * COLUMN_INDICE + k*CELL_INDICE; // set the literals to the cell values
         }
         insert_clause_node(&list, new_clause_node); // insert the clause node into the list
+
 
         for (int k=1;k<=SODOKU_SIZE;k++){
         for (int l=k+1;l<=SODOKU_SIZE;l++){
@@ -218,14 +251,14 @@ clause_list sodoku_constraints_clauses(int clauses_count)
 }
 
 
-void load_sodoku_constraints_from_file(FILE *file, clause_list *list)
+void load_sodoku_constraints_from_file(FILE *file, clause_list *list , int startC1)
 {
     if (file == NULL) {
         fprintf(stderr, "Error: Could not open file for sodoku constraints\n");
         exit(EXIT_FAILURE);
     }
     char line[SODOKU_SIZE+1] = {'x'}; // buffer to read lines from the file
-    int c1=0, c2=-1; // initialize c1 and c2 to -1
+    int c1=startC1, c2=-1; // initialize c1 and c2 to -1
     for (int i=0;i<SODOKU_SIZE;i++) { // loop through rows
         if (fgets(line, sizeof(line), file) == NULL) {
             fprintf(stderr, "Error: Could not read line %d from file\n", i+1);
@@ -352,3 +385,93 @@ bool search_used_constraints(int c1 , int *used_sodoku_constraints, int size)
     return false; // if the constraint is not used, return false
 }
 
+bool sodoku_resolve_by_refutaion(clause_list *list,clause_node *start)
+{
+    // craate an AVL tree to store clauses to perform search for already existing clauses efficiently
+    TNoeud *root = NULL; // root of the AVL tree
+    clause_node *clause_list = list->head; // pointer to the clause list
+    while (clause_list != NULL) // iterate through the list of clauses
+    {
+        // insert clause into the AVL tree
+        clause *c = &clause_list->value; // get the clause from the list
+        inserer(c, &root); // insert the clause into the AVL tree
+        clause_list = clause_list->next; // move to the next clause in the list
+    }
+    // now we have all clauses in the AVL tree, we can perform resolution by refutation
+    clause_node *node1 , *node2; // pointers to the clauses in the list
+    clause_node *resolvent_node; // pointer to the resolvent node
+    clause resolvent = {0}; // initialize the resolvent clause
+    if (start != NULL) { // if start is not NULL, we start from the given clause
+        node1 = start; // set node1 to start
+    } else {
+        node1 = list->head; // otherwise, start with the first clause in the list
+    }
+    int c1 = node1->c1-1;
+    int c =list->tail->c1 ;
+    int resolvent_count = 0; // count of resolvents created
+    int counter ;
+    while (node1 != NULL)
+    {
+        //if (node1->c2 == -2) break;
+        c1++; // increment c1 for each clause
+        //node2 = node1->next;
+
+            //c2 = c1; // set c2 to c1 for initial clauses
+            //node2 = node1->next;
+            node2 = list->head;
+            counter= -1; // reset c2 for each new node1
+        while (node2 != node1)
+        {
+            counter++;
+            /*if (node1->c1 == node2->c1 && node1->c2!=-1)
+            {
+                node2 = node1->next;
+                c2 = c1+1;
+                continue;
+            }*/
+            //for (int i=0;i<node2->value.size;i++) printf(" %d ",node2->value.literals[i]);
+            //printf("\n%d: %s || %s \n",ss++,clause_to_string(&node1->value,hash_table),clause_to_string(&node2->value, hash_table));
+            if (clause_resolvent(&node1->value,&node2->value,&resolvent))
+            {
+                resolvent_node = CreerClauseNoeud(); // create a new clause node for the resolvent
+                resolvent_node->value = resolvent; // set the value of the resolvent
+                resolvent_node->next = NULL; // set the next pointer to NULL
+
+                if (inserer(&resolvent_node->value, &root)){ // insert the resolvent into the AVL tree , if it is not already present insert it in list
+
+                    // in this sodoku version resolvent clause are added to the head of the list
+                    list->size++; // increment the size of the list
+                    resolvent_node->next = list->head;
+                    list->head = resolvent_node; // set the head to the new node
+
+                    if (node2->c2 != UNSUED_SODOKU_CONSTRAINTS) // if the node2 is not a sodoku constraint clause
+                    {
+                        int c2 = resolvent_count-counter +c;
+                        Aff_clause_node(resolvent_node, c1, c2); // set c1 and c2 for the resolvent node
+                    } else {
+                        int c2 = node2->c1;
+                        Aff_clause_node(resolvent_node, c1, c2); // set c1 and c2 for the resolvent node
+                    }
+
+                    resolvent_count++;
+                    if (resolvent.size==0)
+                    {
+                        //printf("FOUNDED\n");
+                        //printf("between : %s and %s\n", clause_to_string(&node1->value, hash_table), clause_to_string(&node2->value, hash_table));
+                        return true; // if the resolvent is empty, we have found a contradiction
+                    }
+                } else
+                { // if the resolvent is already in the list ignore it
+                    free(resolvent_node);
+                    if (resolvent.literals != NULL) free (resolvent.literals); // free the memory allocated for literals
+                    resolvent.literals = NULL; // set literals to NULL
+                }
+            }
+            node2 = node2->next; // move to the next clause in the list
+        }
+        node1 = node1->next; // move to the next clause in the list
+    }
+    // if we reach here, we have not found a contradiction
+    printf("No contradiction found, resolution by refutation failed\n");
+    return false;
+}
