@@ -1,17 +1,4 @@
-# **Projet de Logique : Solveur SAT et Application à la Validation de Sudoku**
-
-**Contributeurs :**
-- Belguesmia Oussama
-- Belloul Wassim Zine Eddine
-- Bouhoum Adlene
-- Bouhoum Mohamed Anes
-
-
-**Groupe :** 09
-
----
-
-## Tableau des matières :
+## Tableau des matieres :
 1. [Introduction](#introduction)
 2. [Vue d’ensemble de l’implémentation](#vue-densemble-de-limplementation)
 3. [Choix techniques et optimisations](#choix-techniques-et-optimisations)
@@ -213,12 +200,13 @@ En somme, ce projet constitue une exploration pratique et approfondie des concep
 **Snippet 3:** Logique de résolution (conceptuelle, basée sur `resolution.c`)
 ![Fonction conceptuelle de résolution de deux clauses](res/images/code_clause_resolvent.png)
 
-**Site web pour visualiser les formules LaTeX :**
+** Website pour visualiser les formules en LaTeX :**<br>
 [https://guembo.github.io/tex_viewer/](https://guembo.github.io/tex_viewer/)
 
-**Pour tester le programme** :
-Le dossier `bin` contient trois exécutables pour tester chaque module :
-- `cnf` : Pour le module FNC (utilise `formula.txt`).
-- `resolution` : Pour le solveur de résolution (utilise `clauses.txt`).
-- `sodoku` : Pour la validation de Sudoku (utilise `sodoku.txt`).
-Vous pouvez lancer les exécutables directement ou modifier les fichiers d'entrée pour vos propres tests.
+
+** Pour Le test du program**:<br>
+On a dans le dossier `bin` trois dossiers :
+- `cnf` : contient l'executable du module FNC, avec un fichier `formula.txt` contient une formule de test. pour tester le module FNC.
+- `resolution` : contient l'executable du module de resolution, avec un fichier `clauses.txt` contient un ensemble de clauses de test. pour tester le module de resolution.
+- `sodoku` : contient l'executable du module de validation de Sodoku, avec un fichier `sodoku.txt` contient un Sodoku de test. pour tester le module de validation de Sodoku.
+ ** Pour faire le test vous pouvez lancer l'executable directemement ou modifier les formules et les clauses**
