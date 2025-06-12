@@ -296,10 +296,9 @@ Le module Sudoku démontre la puissance expressive de la logique propositionnell
 // Conceptual function to resolve two clauses
 ![code_clause_resolvent.png](res/images/code_clause_resolvent.png)
 
-** Website pour visualiser les formules en LaTeX :**<br>
-[https://guembo.github.io/tex_viewer/](https://guembo.github.io/tex_viewer/)
-
-
+**Website pour visualiser les formules en LaTeX generate par le program:**<br>
+[https://guembo.github.io/tex_viewer/](https://guembo.github.io/tex_viewer/) est un site web qui permet de visualiser des formules en LaTeX. Il peut être utilisé pour afficher les formules et tableau de vireter générées par le module FNC et les clauses générées par le module de résolution. Il suffit de copier-coller le code LaTeX dans le champ de saisie et de cliquer sur "Visualiser" pour afficher la formule.
+![code_compare_clauses.png](res/images/latex_preview.png)
 ** Pour Le test du program**:<br>
 On a dans le dossier `bin` trois dossiers :
 - `cnf` : contient l'executable du module FNC, avec un fichier `formula.txt` contient une formule de test. pour tester le module FNC.
