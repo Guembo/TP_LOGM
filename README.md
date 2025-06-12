@@ -119,6 +119,10 @@ Un autre exemple de fichier contenant un ensemble de clauses consistantes :
 ```
 * Le fichier `clauses.txt` doit contenuer que  des clauses en FNC, chaque clause doit être sur une ligne séparée et les variables propositionnelles sparer par `|`. Les commentaires peuvent être ajoutés en utilisant le caractère `#` au début de la ligne.
 
+**Le fichier `deduction.tex`** : est aussi generé par le programme, il contient les clauses générées pour l'ensemble des clauses, y compris les clauses initiales et les clauses résolues. Le fichier est au format LaTeX et peut être utilisé pour générer un document PDF contenant les clauses et les étapes de la résolution. Il peut être visualisé dans le site web qu'on a créé pour afficher les formules en LaTeX : [https://guembo.github.io/tex_viewer/](https://guembo.github.io/tex_viewer/)<br>
+![](res/images/duduction°lqtex.png "Image")<br>
+![](res/images/duduction_latex2.png "Image")<br>
+
 ## **Module FNC**
 Le module FNC est responsable de la conversion d'une formule en forme normale conjonctive (FNC). Il permet de lire une formule en codifiier en code presenté dans ce document et de la convertir en FNC.<br>
 Le fonctionnement du module FNC est basé sur les règles de simplification des formules logiques et la conversion en FNC. Il utilise une structure de données appelée "formule-tree" pour représenter la formule et effectuer les opérations logiques nécessaires.<br>
