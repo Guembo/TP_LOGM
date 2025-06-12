@@ -8,6 +8,7 @@
 7. [Conclusion](#conclusion)
 8. [Annexes ](#annexes)
 
+
 ## **Introduction**
 
 ## **Vue d'ensemble de l’implémentation**
@@ -294,6 +295,10 @@ Le module Sudoku démontre la puissance expressive de la logique propositionnell
 **Snippet 3:** Resolution Logic (conceptual, based on resolution.c)
 // Conceptual function to resolve two clauses
 ![code_clause_resolvent.png](res/images/code_clause_resolvent.png)
+
+** Website pour visualiser les formules en LaTeX :**<br>
+[https://guembo.github.io/tex_viewer/](https://guembo.github.io/tex_viewer/)
+
 
 ** Pour Le test du program**:<br>
 On a dans le dossier `bin` trois dossiers :
