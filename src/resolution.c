@@ -2,11 +2,12 @@
 
 #include "clauses_avl.h"
 
+
 clause clause_parse(char *str , propositions_hash_table *hash_table)
 {
     clause c ;
     init_clause(&c); // initialize the clause
-    char pr_v[MAX_VARIABLE_LENGHT]; // charachter and two digits for index
+    char pr_v[MAX_VARIABLE_LENGTH]; // charachter and two digits for index
     //pr_v[3] = '\0'; // null-terminate the string
     bool pr_v_signe = true; // true for positive, false for negative
     int literal_index = 0;
@@ -27,7 +28,7 @@ clause clause_parse(char *str , propositions_hash_table *hash_table)
             i++;
             if (str[i] >= '0' && str[i] <= '9') // check if character is digit
             {
-                for (int j=1;j<MAX_VARIABLE_LENGHT;j++)
+                for (int j=1;j<MAX_VARIABLE_LENGTH;j++)
                 {
                     if (str[i] >= '0' && str[i] <= '9') {// check if character is digit
                         pr_v[j] = str[i++]; // store digit
@@ -36,9 +37,16 @@ clause clause_parse(char *str , propositions_hash_table *hash_table)
                         break; // break if no more digits
                     }
                 }
-                pr_v[MAX_VARIABLE_LENGHT-1] = '\0'; // ensure null-termination
+                pr_v[MAX_VARIABLE_LENGTH-1] = '\0'; // ensure null-termination
             } else pr_v[1] = '\0'; // if no digit, terminate string
-            int index = proposition_index(pr_v, hash_table); // get index of the proposition
+            char *buffer = malloc(MAX_VARIABLE_LENGTH * sizeof(char));
+            int j = 0;
+            while (pr_v[j] != '\0' && j < MAX_VARIABLE_LENGTH - 1) {
+                buffer[j] = pr_v[j]; // copy the proposition to buffer
+                j++;
+            }
+            buffer[j] = '\0'; // null-terminate the buffer
+            int index = proposition_index(buffer, hash_table); // get index of the proposition
             if (index == -1) {
                 fprintf(stderr, "Error: Hash table overfloww\n");
                 return c; // if index is -1, hash table is full
@@ -56,7 +64,7 @@ int proposition_index(char *proposition, propositions_hash_table *hash_table)
     int index = 1; // start from 1 because 0 has no complement
     while (index < hash_table->size )
     {
-        if (hash_table->table[index] != NULL && strncmp(hash_table->table[index],proposition,MAX_VARIABLE_LENGHT) == 0)
+        if (hash_table->table[index] != NULL && variable_compare(hash_table->table[index],proposition) == 0)
         {
             return index; // found the proposition
         }
@@ -65,14 +73,7 @@ int proposition_index(char *proposition, propositions_hash_table *hash_table)
     // if not found, add it to the hash table
     if (index < MAX_VARIABLES)
     {
-        hash_table->table[index] = malloc(MAX_VARIABLE_LENGHT);
-        if (hash_table->table[index] == NULL)
-        {
-            fprintf(stderr, "Memory allocation failed while allocating variable\n");
-            exit(EXIT_FAILURE);
-        }
-        strncpy(hash_table->table[index], proposition, MAX_VARIABLE_LENGHT);
-        hash_table->table[index][MAX_VARIABLE_LENGHT - 1] = '\0';
+        hash_table->table[index] = proposition;
         hash_table->size++;
         return index; // return the index of the new proposition
     }
@@ -164,7 +165,7 @@ void init_hash_table(propositions_hash_table *hash_table)
 {
     hash_table->size = 1; // initialize size to 0
     hash_table->table = malloc(MAX_VARIABLES * sizeof(char *)); // allocate memory for hash table
-    hash_table->table[0] = malloc(MAX_VARIABLE_LENGHT);
+    hash_table->table[0] = malloc(MAX_VARIABLE_LENGTH);
     hash_table->table[0] = "0"; // index 0 is reserved for empty clasue
 }
 
@@ -180,13 +181,28 @@ bool resolve_by_refutaion(clause_list *list,clause_node *start, propositions_has
     {
         // insert clause into the AVL tree
         clause *c = &clause_list->value; // get the clause from the list
-        if (!inserer(c, &root) || clause_is_tautology(&clause_list->value)){ // insert the clause into the AVL tree
-            clause_node *next = clause_list->next;
+        clause_node *next;
+        next= clause_list->next;
+        if (clause_is_tautology(&clause_list->value)||!inserer(c, &root))
+        {
+            // insert the clause into the AVL tree
+
             free(clause_list);
-            previous->next = next; // remove the clause from the list if it is already present in the AVL tree
-        }
-        previous = clause_list; // save the previous node
-        clause_list = clause_list->next; // move to the next clause in the list
+            if (previous == NULL) { // if this is the first clause in the list
+                next=list->head = next; // set head to the next clause
+            } else {
+                previous->next = next; // set previous next to the next clause
+            }
+            list->size--; // decrement the size of the list
+        } else previous = clause_list; // if insertion was successful, set previous to current clause
+        clause_list = next; // move to the next clause in the list
+    }
+    clause_node *node = list->head; // reset node to the head of the list
+    int clause_count=0;
+    while (node != NULL)
+    {
+        node->c1 = clause_count++; // set c1 to the current clause count
+        node = node->next;
     }
     // now we have all clauses in the AVL tree, we can perform resolution by refutation
     clause_node *node1 , *node2; // pointers to the clauses in the list
@@ -197,8 +213,12 @@ bool resolve_by_refutaion(clause_list *list,clause_node *start, propositions_has
     } else {
         node1 = list->head; // otherwise, start with the first clause in the list
     }
-    int c1 = node1->c1-1;
-    int c2 =-1; // indices of the clauses that were used to create this clause
+    int c1,c2;
+    if (node1 != NULL) {
+        c1 = node1->c1-1;
+        c2 =-1; // indices of the clauses that were used to create this clause
+    }
+
 
     while (node1 != NULL)
     {
@@ -254,7 +274,7 @@ bool resolve_by_refutaion(clause_list *list,clause_node *start, propositions_has
         node1 = node1->next; // move to the next clause in the list
     }
     // if we reach here, we have not found a contradiction
-    printf("No contradiction found, resolution by refutation failed\n");
+    //printf("No contradiction found, resolution by refutation failed\n");
     return false;
 }
 /* * Complete order relation between clauses to use in AVL tree
@@ -390,6 +410,8 @@ void save_clauses_after_resolution(FILE *file, clause_list *list, propositions_h
     }
 }
 
+
+
 bool clause_is_tautology(clause *c)
 {
     if (c == NULL || c->size == 0) {
@@ -403,4 +425,41 @@ bool clause_is_tautology(clause *c)
         }
     }
     return false; // no tautology found
+}
+int variable_compare(char *a, char *b)
+{
+    int i = 0;
+    while (a[i]!= '\0' && b[i] != '\0' && i<MAX_VARIABLE_LENGTH) {
+        if (a[i] != b[i]) {
+            return a[i] - b[i]; // return difference if characters are not equal
+        }
+        i++;
+    }
+    return a[i] - b[i];
+}
+
+void getVariable(char *input, int *i,char* buffer)
+{
+    int j = 0;
+    while (input[*i] != '\0' && input[*i] != ' ' && input[*i] != '&' && input[*i] != '|' && input[*i] != '>' && input[*i] != '=' && input[*i] != '(' && input[*i] != ')') {
+        buffer[j++] = input[(*i)++];
+    }
+    buffer[j] = '\0'; // null-terminate the string
+    (*i)--; // decrement i to point to the last character read
+}
+
+void save_clauses_to_file(clause_list list, FILE *file, propositions_hash_table *hash_table)
+{
+    clause_node *node = list.head;
+    while (node != NULL) {
+        fprintf(file, "%s\n", clause_to_string(&node->value, hash_table)); // print the clause to the file
+        node = node->next; // move to the next node
+    }
+}
+
+void append_string(char *buffer, int *index, const char *src)
+{
+    while (*src) {
+        buffer[(*index)++] = *src++;
+    }
 }

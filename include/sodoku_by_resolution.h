@@ -50,4 +50,5 @@ void save_sodoku_validation(FILE *file, clause_list *list ,clause_list *result_c
 void sodoku_clauses_to_string(clause c, char *buffer, size_t buffer_size);
 bool search_used_constraints(int c1 , int *used_sodoku_constraints, int size);
 bool sodoku_resolve_by_refutaion(clause_list *list,clause_node *start);
+
 #endif //SODOKU_BY_RESOLUTION_H

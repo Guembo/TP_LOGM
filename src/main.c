@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "resolution.h"
+#include <resolution.h>
 #include <time.h>  	// pour time() et time_t
 #include <sys/time.h> 	// pour gettimeofday(...) et struct timeval
 
@@ -24,6 +23,8 @@ void load_clauses_from_file(FILE *file, clause_list *list, propositions_hash_tab
  * It writes each clause in the list to the file in a specific format
  */
 void save_clauses_after_resolution(FILE *file, clause_list *list, propositions_hash_table *hash_table);
+void clause_to_latex(clause c, propositions_hash_table *hash_table, char *buffer, int *index);
+void latex_save_clauses_after_resolution(FILE *file, clause_list *list, propositions_hash_table *hash_table);
 
 int main(int argc, char **argv)
 {
@@ -106,9 +107,9 @@ int main(int argc, char **argv)
             gettimeofday(&tv2, NULL);
             t = (tv2.tv_sec - tv1.tv_sec)*1000000 + (tv2.tv_usec - tv1.tv_usec);
             if (result == true) {
-                printf("Resolution by refutation succeeded, contradiction found.\n");
+                printf("Resolution by refutation succeeded, contradiction found. The set is inconsistent\n");
             } else {
-                printf("Resolution by refutation failed, no contradiction found.\n");
+                printf("Resolution by refutation failed, no contradiction found. The set is consistent\n");
             }
             printf("Operation took %ld ms\n",t/1000);
             fflush(stdout);
@@ -119,6 +120,17 @@ int main(int argc, char **argv)
             }
         save_clauses_after_resolution(deduction_file, &list_des_clauses, &hash_table);
         fclose(deduction_file);
+        printf("Deduction saved to 'deduction.csv'\n");
+            FILE *latex_file = fopen("deduction.tex", "w");
+            if (latex_file == NULL) {
+                fprintf(stderr, "Error: Could not open output file 'deduction.tex'\n");
+                return EXIT_FAILURE;
+            }
+            latex_save_clauses_after_resolution(latex_file, &list_des_clauses, &hash_table);
+            fclose(latex_file);
+            printf("Deduction saved to 'deduction.tex'\n");
+            printf("Press Enter to exit\n");
+            getchar(); // wait for user input before exiting
 
         break;
         default:
@@ -154,3 +166,43 @@ void load_clauses_from_file(FILE *file, clause_list *list, propositions_hash_tab
     }
 }
 
+void latex_save_clauses_after_resolution(FILE *file, clause_list *list, propositions_hash_table *hash_table)
+{
+    fprintf(file,"\\begin{array}{|c|c|c|}\n");
+    fprintf(file,"\\hline\n");
+    fprintf(file,"\\textbf{Index} & \\textbf{Source} & \\textbf{Clause} \\\\\n");
+    fprintf(file,"\\hline\n");
+    int index = 0; // index for the clauses
+    clause_node *node = list->head; // start with the head of the list
+    int i=0;
+    char *buffer = malloc(MAX_LINE_LENGTH * sizeof(char)); // buffer to store the clause string
+    while (node != NULL) { // iterate through the list
+        i =0;
+        clause_to_latex(node->value, hash_table,buffer, &i); // convert the clause to LaTeX format
+        buffer[i] = '\0'; // null-terminate the string
+        if (node->c2 == -1) { // if c2 is -1, it means this is an initial clause
+            fprintf(file, "\\text{C%d}&\\text{initial clause}&%s\\\\", index++, buffer); // print the clause to the file
+        } else {
+            fprintf(file, "\\text{C%d}&\\text{res(C%d;C%d)}&%s\\\\", index++, node->c1, node->c2, buffer, hash_table); // print the resolvent clause with its origin
+        }
+        node = node->next; // move to the next node
+    }
+    fprintf(file,"\n\\hline\n");
+    fprintf(file,"\\end{array}\n");
+    free(buffer); // free the memory allocated for the buffer
+}
+void clause_to_latex(clause c, propositions_hash_table *hash_table, char *buffer, int *index)
+{
+    if (c.size == 0)
+    {
+        append_string(buffer, index, "Empty Clause\0"); // if the clause is empty, return empty clause
+    }
+    for (int i = 0; i < c.size; i++) {
+        char *proposition = hash_table->table[abs(c.literals[i])];
+        if (c.literals[i] < 0) append_string(buffer, index, "\\lnot \0"); // add negation sign for negative literals
+        for (int j = 0; proposition[j] != '\0'; j++) {
+            buffer[(*index)++] = proposition[j]; // append proposition to buffer
+        }
+        if (i < c.size - 1) append_string(buffer, index, " \\lor \0"); // add disjunction sign between literals
+    }
+}

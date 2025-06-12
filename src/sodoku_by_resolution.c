@@ -97,6 +97,12 @@ int main(int argc, char *argv[])
     FILE *output_file = NULL;
     output_file = fopen("sodoku_solution.csv", "w"); // open the output file for writing
     save_sodoku_validation(output_file, &list, &intial_values,used_sodoku_constraints,used_count-1); // save the sodoku validation to the output file
+    fclose(output_file);
+    printf("Sodoku validation saved to 'sodoku_solution.csv'.\n");
+    printf("Press Enter to exit\n");
+    getchar();
+    return 0;
+
 
 }
 

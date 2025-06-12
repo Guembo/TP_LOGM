@@ -1,0 +1,8 @@
+-S| -Q| -P| S| C
+-T| -Q| -P| S| C
+-S| -Q| -P| T| C
+-T| -Q| -P| T| C
+-S| -R| -P| S| C
+-T| -R| -P| S| C
+-S| -R| -P| T| C
+-T| -R| -P| T| C

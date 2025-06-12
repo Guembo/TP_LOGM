@@ -20,9 +20,9 @@
  *  4. P0 | P1 (disjunction)
  *  5. P0 -> P1 (implication)
  *  6. P0 <-> P1 (equivalence)
- */
-#define MAX_VARIABLE_LENGHT 5 // maximum length of a variable (e.g., P99)
-#define MAX_LINE_LENGTH 1024
+ *///
+#define MAX_VARIABLE_LENGTH 5 // maximum length of a variable (e.g., P99)
+#define MAX_LINE_LENGTH 5000
 #define MAX_LITERALS 100 // maximum number of literals in a clause
 #define MAX_VARIABLES 500
 
@@ -73,4 +73,8 @@ bool clause_resolvent(clause *c1, clause *c2, clause * result);
 bool resolve_by_refutaion(clause_list *list,clause_node *start, propositions_hash_table *hash_table);
 void save_clauses_after_resolution(FILE *file, clause_list *list, propositions_hash_table *hash_table);
 bool clause_is_tautology(clause *c);
+int variable_compare(char *a, char *b);
+void getVariable(char *input, int *i,char* buffer);
+void save_clauses_to_file(clause_list list, FILE *file, propositions_hash_table *hash_table);
+void append_string(char *buffer, int *index, const char *src);
 #endif //RESOLUTION_H

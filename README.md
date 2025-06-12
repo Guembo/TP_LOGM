@@ -120,8 +120,66 @@ Un autre exemple de fichier contenant un ensemble de clauses consistantes :
 * Le fichier `clauses.txt` doit contenuer que  des clauses en FNC, chaque clause doit être sur une ligne séparée et les variables propositionnelles sparer par `|`. Les commentaires peuvent être ajoutés en utilisant le caractère `#` au début de la ligne.
 
 ## **Module FNC**
-Le module FNC est responsable de la conversion d'une formule en forme normale conjonctive (FNC). Il permet de lire une formule en codifiier en code presenté dans ce document et de la convertir en FNC.
+Le module FNC est responsable de la conversion d'une formule en forme normale conjonctive (FNC). Il permet de lire une formule en codifiier en code presenté dans ce document et de la convertir en FNC.<br>
+Le fonctionnement du module FNC est basé sur les règles de simplification des formules logiques et la conversion en FNC. Il utilise une structure de données appelée "formule-tree" pour représenter la formule et effectuer les opérations logiques nécessaires.<br>
 
+### Tree-Formula :
+Le module FNC utilise une structure de données appelée "formule-tree" pour représenter la formule. Cette structure est un arbre binaire où chaque nœud représente une opération logique (conjonction, disjonction, implication, équivalence) et les feuilles sont des variables propositionnelles. La formule-tree est utilisée pour effectuer des opérations logiques sur la formule et pour la convertir en FNC.
+We define the following rules for a formula-tree:
+- **Tout nœud de variable propositionnelle est une formule-tree.**
+- **Tout nœud de conjonction, disjonction, implication, équivalence avec deux fils gauche et droit qui sont des formules-tree est une formule-tree.**
+- **Tout nœud de négation avec un seul fils (le fils droit) qui est une formule-tree est une formule-tree.**
+- **Tout autre cas n'est pas une formule-tree.**
+
+> Comme la formule-tree nous permet de evaluer la formule pour des valeurs de vérité données, On a ajouter un module qui generes la table de vérité de la formule et le sauvegarder dans un fichier CSV et un fichier Latex pour une prresntation plus lisible.
+Cette structure permet de représenter des formules logiques de manière hiérarchique et de les manipuler facilement. Le module FNC fournit des fonctions pour lire une formule à partir d'un fichier texte, créer une formule-tree à partir de cette formule, et avec la formule-tree on peut effectuer plusieurs opérations logiques, comme la conversion en FNC, la simplification de la formule, et l'evaluation de la formule (truth table).
+### **Fonctionnalités du module FNC :**
+- **Lecture d'une formule** : Le module lit une formule à partir d'un fichier texte et crée une "formule-tree".
+- **Remove Equivalence** : La fonction `formula_tree_remove_equivalence` supprime les équivalences de la formule-tree en les remplaçant par des conjonctions et des disjonctions.
+- **Remove Implication** : La fonction `formula_tree_remove_implication` supprime les implications de la formule-tree en les remplaçant par des disjonctions.
+- **Push Negation** : La fonction `formula_tree_push_negation` pousse les négations vers les feuilles de l'arbre en utilisant les règles de De Morgan.
+- **Distribute Disjunction** : La fonction `formula_tree_distribute_disjunction` distribue les disjonctions sur les conjonctions pour obtenir une forme normale conjonctive (FNC).
+- **Convert to FNC** : La fonction `formula_to_fnc` a l'aid des fonctions précédentes, convertit la formule-tree en FNC en appliquant les règles de simplification et de distribution. Et genère une liste de clauses en FNC.
+
+### **Exemple d'utilisation du module FNC :**
+Le module FNC peut être utilisé pour lire une formule à partir d'un fichier texte, la convertir en FNC et afficher les clauses en FNC. Par exemple, si on a un fichier `formula.txt` contenant la formule suivante :
+```plaintext
+P & (Q | R) > (S = T)
+```
+**1. The formula is read from the file and a formula-tree is created.**
+![](res/images/formule_tree1.png "Image")<br>
+**2. The formula-tree is simplified by removing equivalences.**
+![](res/images/formule_tree2.png "Image")<br>
+**3. The formula-tree is simplified by removing implications.**
+![](res/images/formula_tree3.png "Image")<br>
+**4. The formula-tree is simplified by pushing negations.**
+![](res/images/formula_tree_not1.png "Image") <br>
+![](res/images/formule_tree_not2.png "Image")<br>
+![](res/images/formula_tree_not4.png "Image") <br>
+![](res/images/formula_tree_not_5.png "Image")<br>
+
+5. The formula-tree is distributed to obtain a FNC.** The tree becames a bit large we can not display it here but we can see the result of the conversion in the next step.
+**6. The FNC is generated and displayed as a list of clauses.**
+![](res/images/fnc_terminal_res.png "Image")<br>
+
+**7. L'ensemble des clauses est sauvegardé dans un fichier `clauses_result.txt` , `clauses_result.tex` , tel que le fichier `clauses_result.txt` contient les clauses en FNC sous forme de liste de disjonction de variables propositionnelles.**
+```plaintext
+-S| -Q| -P| S| C
+-T| -Q| -P| S| C
+-S| -Q| -P| T| C
+-T| -Q| -P| T| C
+-S| -R| -P| S| C
+-T| -R| -P| S| C
+-S| -R| -P| T| C
+-T| -R| -P| T| C
+```
+Et le fichier `clauses_result.tex` contient les clauses en FNC sous forme de tableau LaTeX montre tout les etapes de simplifification. Et on peut le visualiser dans le site web qu'on a créé pour afficher les formules en LaTeX : [https://guembo.github.io/tex_viewer/](https://guembo.github.io/tex_viewer/)
+![](res/images/latex_clause_fom.png "Image")<br>
+Le program genere également un fichier `truth_table.csv` contenant la table de vérité de la formule, qui peut être utilisé pour analyser les valeurs de vérité de la formule. Et un fichier `truth_table.tex` contenant la table de vérité de la formule en LaTeX.
+
+Dans ce cas le tableau de vérité est un peut long (64 lignes) donc on ne peut pas l'afficher ici mais on peut le visualiser dans le site web qu'on a créé pour afficher les formules en LaTeX : [https://guembo.github.io/tex_viewer/](https://guembo.github.io/tex_viewer/)<br>
+Un exemple de la table de vérité pour une formule simple : `P & Q | R` est :
+![](res/images/truth_table%5D.png "Image")<br>
 #### application-concrète-validation-de-sodoku
 ## **Application concrète "Validation de Sodoku":**
 
@@ -232,3 +290,10 @@ Le module Sudoku démontre la puissance expressive de la logique propositionnell
 **Snippet 3:** Resolution Logic (conceptual, based on resolution.c)
 // Conceptual function to resolve two clauses
 ![code_clause_resolvent.png](res/images/code_clause_resolvent.png)
+
+** Pour Le test du program**:<br>
+On a dans le dossier `bin` trois dossiers :
+- `cnf` : contient l'executable du module FNC, avec un fichier `formula.txt` contient une formule de test. pour tester le module FNC.
+- `resolution` : contient l'executable du module de resolution, avec un fichier `clauses.txt` contient un ensemble de clauses de test. pour tester le module de resolution.
+- `sodoku` : contient l'executable du module de validation de Sodoku, avec un fichier `sodoku.txt` contient un Sodoku de test. pour tester le module de validation de Sodoku.
+ ** Pour faire le test vous pouvez lancer l'executable directemement ou modifier les formules et les clauses**

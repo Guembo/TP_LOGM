@@ -1,0 +1,11 @@
+0,,P| Q| R
+1,,-P
+2,,-R
+3,,-Q
+c4,res(c1;c0),Q| R
+c5,res(c2;c0),P| Q
+c6,res(c3;c0),P| R
+c7,res(c4;c2),Q
+c8,res(c4;c3),R
+c9,res(c5;c3),P
+c10,res(c7;c3),(null)

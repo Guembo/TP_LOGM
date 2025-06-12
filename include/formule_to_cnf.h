@@ -1,10 +1,9 @@
-//
-// Created by dell on 6/11/2025.
-//
 
 #ifndef FORMULE_TO_CNF_H
 #define FORMULE_TO_CNF_H
 #include <stddef.h>
+#include <resolution.h>
+#include <clauses_avl.h>
 /*
 * Rules of precedence between connectives:
 * enables a unique reading and, thus, prevents ambiguities. In a given formula, we will apply the connectives in the following order:
@@ -26,15 +25,7 @@
 * ---
 * We use the same concept of hashing propositional variable as resolution.h
  */
-#define MAX_VARIABLE_LENGTH 5 // maximum length of a variable (e.g., P99)
-#define MAX_LINE_LENGTH 1024
-#define MAX_LITERALS 100 // maximum number of literals in a clause
-#define MAX_VARIABLES 500 // maximum number of variables in the hash table
-typedef struct
-{
- int size; // size of hash table
- char **table; // hash table to store propositions
-}propositions_hash_table;
+
 
 typedef enum {
     AND='&', // conjunction
@@ -46,14 +37,14 @@ typedef enum {
     CLOSE_BRACKET=')', // parentheses
     VARIABLE, // propositional variable
 } connective_type; // type of connective
-enum
+/*enum
 {
     B_AND = 0xA7, // using UTF-8 characters for beautiful connectors
     B_OR = 0x1E, // using UTF-8 characters for beautiful connectors
     B_IMPLIES = 0x92, // using UTF-8 characters for beautiful connectors
     B_EQUIVALENT = 0x94, // using UTF-8 characters for beautiful connectors
     B_NOT = 0xAC, // using UTF-8 characters for beautiful connectors
-}BEAUTIFUL_CONECTORS; // using UTF-8 characters for beautiful connectors
+}BEAUTIFUL_CONECTORS; // using UTF-8 characters for beautiful connectors*/
 enum {FIRST_FORMULA , RIGHT_FORMULA , LEFT_FORMULA }; // used to distinguish left and right formulas in the tree
 //We included variable just for programming purpose to avoid declaring another enum to distinguish connectives from variable
 
@@ -66,6 +57,7 @@ typedef struct node_struct{
     char type;
 }*node;
 void allocateTree(node * n);
+void destroy_tree(node *root);
 /* Functions to manupulate nodes stack */
 typedef struct stack_node{
     node val;
@@ -80,13 +72,19 @@ node getTop(stack s);
 /**/
 int isConnector(char c);
 int comparePriority(char a, char b);
-void getVariable(char *input, int *i,char* buffer);
 int variable_compare(char *a, char *b);
-int proposition_index(char *proposition, propositions_hash_table *hash_table);
 node formula_to_tree(char *formula, propositions_hash_table *hash_table);
-void latex_tree_to_formula(node root,propositions_hash_table hash_table ,char *buffer,int *index,int formula_type);
+void latex_tree_to_formula(node root, propositions_hash_table hash_table, char *buffer, int *index, int formula_type,int parenthese);
 void tree_to_formula(node root,propositions_hash_table hash_table ,char *buffer,int *index,int formula_type);
-void init_hash_table(propositions_hash_table *hash_table);
+void tree_to_formula_reduced_parentheses(node root,propositions_hash_table hash_table ,char *buffer,int *index,int formula_type,int parenthese);
 void append_utf8(char *buffer, int *index, const char *utf8_char);
 node formula_tree_duplicate(node root);
+void formula_tree_remove_equivalences(node *root);
+void formula_tree_remove_implications(node *root);
+void formula_tree_push_negation(node *root);
+void formula_tree_distribute_disjunctions(node *root);
+node formula_to_fnc(char *formula, propositions_hash_table *hash_table, clause_list *list,char *results[]);
+void clause_to_latex(clause c, propositions_hash_table *hash_table, char *buffer, int *index);
+int formula_tree_evaluate(node root, propositions_hash_table *hash_table, int *values);
+void formula_tree_truth_table(node root, propositions_hash_table *hash_table,char **truth_table);
 #endif //FORMULE_TO_CNF_H
