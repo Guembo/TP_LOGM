@@ -204,7 +204,7 @@ En somme, ce projet constitue une exploration pratique et approfondie des concep
 [https://guembo.github.io/tex_viewer/](https://guembo.github.io/tex_viewer/)
 
 
-** Pour Le test du program**:<br>
+**Pour Le test du program**:<br>
 On a dans le dossier `bin` trois dossiers :
 - `cnf` : contient l'executable du module FNC, avec un fichier `formula.txt` contient une formule de test. pour tester le module FNC.
 - `resolution` : contient l'executable du module de resolution, avec un fichier `clauses.txt` contient un ensemble de clauses de test. pour tester le module de resolution.
