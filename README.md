@@ -1,3 +1,12 @@
+# TP LOGM 2023/2024 :
+Realise par : <br>
+- Beluesmia Oussama G9<br>
+- Belloul Wassim Zineddine G9<br>
+- Bouhoum Adlene G9<br>
+- Bouhoum Anes G9<br>
+
+---
+
 ## Tableau des matieres :
 1. [Introduction](#introduction)
 2. [Vue d’ensemble de l’implémentation](#vue-densemble-de-limplementation)
@@ -94,8 +103,8 @@ Le solveur a été validé à l'aide de tests unitaires et de cas d'utilisation 
         S|-R
         Q|-R
         ```
-        > **Sortie du programme :**
-        > ![Sortie pour un ensemble inconsistant](res/images/program_output_ensemble_inconsitent.png)
+      > **Sortie du programme :**
+      > ![Sortie pour un ensemble inconsistant](res/images/program_output_ensemble_inconsitent.png)
 
     * Exemple d'un **ensemble consistant** :
         ```plaintext
@@ -107,13 +116,13 @@ Le solveur a été validé à l'aide de tests unitaires et de cas d'utilisation 
         P|S
         -P
         ```
-        > **Sortie du programme :**
-        > ![Sortie pour un ensemble consistant](res/images/program_output_ensemble_consistent.png)
+      > **Sortie du programme :**
+      > ![Sortie pour un ensemble consistant](res/images/program_output_ensemble_consistent.png)
 
 * **Fichiers de sortie** :
     * `clauses.csv` : contient les clauses générées.
     * `deduction.tex` : contient les étapes de la déduction au format LaTeX, visualisable sur notre [visionneuse TeX en ligne](https://guembo.github.io/tex_viewer/).
-    ![](res/images/duduction_latex2.png "Exemple de déduction en LaTeX")
+      ![](res/images/duduction_latex2.png "Exemple de déduction en LaTeX")
 
 ---
 
@@ -170,12 +179,12 @@ Le programme lit une grille depuis `sodoku.txt`, la convertit en un ensemble de 
 - Si l'ensemble est **inconsistant**, la grille est **invalide**.
 
 * **Exemple de Sudoku invalide** :
-    ![](res/images/program_output_invalid_sodoku.png "Résultat pour un Sudoku invalide")
+  ![](res/images/program_output_invalid_sodoku.png "Résultat pour un Sudoku invalide")
 
-    La déduction montre la contradiction, par exemple, que la cellule (1,2) doit contenir un 3 et ne doit pas contenir un 3.
+  La déduction montre la contradiction, par exemple, que la cellule (1,2) doit contenir un 3 et ne doit pas contenir un 3.
 
 * **Exemple de Sudoku valide** :
-    ![](res/images/program_output_valid_sodoku.png "Résultat pour un Sudoku valide")
+  ![](res/images/program_output_valid_sodoku.png "Résultat pour un Sudoku valide")
 
 ---
 
@@ -209,4 +218,4 @@ On a dans le dossier `bin` trois dossiers :
 - `cnf` : contient l'executable du module FNC, avec un fichier `formula.txt` contient une formule de test. pour tester le module FNC.
 - `resolution` : contient l'executable du module de resolution, avec un fichier `clauses.txt` contient un ensemble de clauses de test. pour tester le module de resolution.
 - `sodoku` : contient l'executable du module de validation de Sodoku, avec un fichier `sodoku.txt` contient un Sodoku de test. pour tester le module de validation de Sodoku.
- ** Pour faire le test vous pouvez lancer l'executable directemement ou modifier les formules et les clauses**
+  ** Pour faire le test vous pouvez lancer l'executable directemement ou modifier les formules et les clauses**
